@@ -27,20 +27,8 @@ export default function Layout() {
         gap: 4
       }}>
         {/* Logo */}
-        <div style={{ padding: '0 20px 24px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 32, height: 32,
-              background: 'var(--accent)',
-              borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, fontWeight: 600, color: '#fff'
-            }}>P</div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>PropGear</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>portfolio os</div>
-            </div>
-          </div>
+        <div style={{ padding: '0 16px 20px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
+          <img src="/logo.svg" alt="PropGear" style={{ width: '100%', maxWidth: 180, height: 'auto' }} />
         </div>
 
         {/* Nav */}
