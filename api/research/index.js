@@ -10,60 +10,12 @@ const supabase = createClient(
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const SYSTEM_PROMPT = `You are PropGear's AI research engine — an expert Australian property investment analyst.
+const SYSTEM_PROMPT = `You are an Australian property investment analyst for PropGear. Research suburbs using web search and return DSR-style scores.
 
-Your task is to research and score Australian suburbs for investment potential using a DSR-style (Demand-to-Supply Ratio) methodology. Use web search to find current data.
+Return ONLY this JSON (no markdown, no explanation):
+{"suburbs":[{"suburb":"Name","state":"QLD","postcode":"4350","median_price":620000,"gross_yield":5.8,"vacancy_rate":1.2,"population_growth":2.1,"overall_score":78,"recommendation_tag":"Strong Buy","scores":{"Rental yield":82,"Vacancy rate":90,"Population growth":75,"Infrastructure":68,"Affordability":70,"Airbnb potential":55,"Supply risk":72,"Economic drivers":78},"data_points":[{"label":"Median price","value":"$620k"},{"label":"Price growth","value":"6.2%"},{"label":"Days on market","value":"18"}],"summary":"2-3 sentence analysis.","infrastructure":["Major project 2024"],"risks":["Key risk"]}],"market_overview":"Brief market summary.","search_date":"2026","disclaimer":"AI analysis only. Not financial advice."}
 
-After researching, return a JSON object with this exact structure:
-{
-  "suburbs": [
-    {
-      "suburb": "Suburb Name",
-      "state": "QLD",
-      "postcode": "4350",
-      "median_price": 620000,
-      "gross_yield": 5.8,
-      "vacancy_rate": 1.2,
-      "population_growth": 2.1,
-      "overall_score": 78,
-      "recommendation_tag": "Strong Buy",
-      "scores": {
-        "Rental yield": 82,
-        "Vacancy rate": 90,
-        "Population growth": 75,
-        "Infrastructure": 68,
-        "Affordability": 70,
-        "Airbnb potential": 55,
-        "Supply risk": 72,
-        "Economic drivers": 78
-      },
-      "data_points": [
-        { "label": "Median house price", "value": "$620,000" },
-        { "label": "Annual price growth", "value": "6.2%" },
-        { "label": "Days on market", "value": "18 days" },
-        { "label": "Rental demand", "value": "High" }
-      ],
-      "summary": "2-3 sentence AI analysis of investment potential.",
-      "infrastructure": ["$2.1B hospital expansion approved 2023"],
-      "risks": ["Single employer town risk"]
-    }
-  ],
-  "market_overview": "Brief 2-3 sentence overview of current Australian property market conditions.",
-  "search_date": "March 2026",
-  "disclaimer": "AI-generated analysis based on publicly available data. Not financial advice. Always conduct your own due diligence."
-}
-
-Scoring:
-- Rental yield: 100=8%+, 80=6-7%, 60=5-6%, 40=4-5%, 20=under 4%
-- Vacancy rate: 100=under 1%, 85=1-2%, 70=2-3%, 50=3-4%, 30=over 4%
-- Population growth: 100=3%+, 80=2-3%, 65=1-2%, 40=0-1%, 20=negative
-- Infrastructure: based on approved/under construction government projects
-- Affordability: entry point relative to Australian median
-- Airbnb potential: tourism, short-stay demand, council regulations
-- Supply risk: new supply pipeline vs demand
-- Economic drivers: employment diversity, key industries
-
-IMPORTANT: Your final message must contain ONLY the JSON object. No markdown fences, no explanation, just the raw JSON.`
+Scoring: yield(100=8%+,80=6-7%,60=5-6%,40=4-5%); vacancy(100=<1%,85=1-2%,70=2-3%,50=3-4%); popgrowth(100=3%+,80=2-3%,65=1-2%,40=0-1%); others 0-100 based on research.`
 
 async function runWithWebSearch(userPrompt) {
   const tools = [{ type: 'web_search_20250305', name: 'web_search' }]
@@ -142,13 +94,11 @@ export default async function handler(req, res) {
     const results = extractJSON(rawText)
 
     // Save to history (non-critical)
-    try {
-  await supabase.from('research_results').insert({
-    user_id: user.userId,
-    search_criteria: criteria,
-    results
-  })
-  } catch {}
+    await supabase.from('research_results').insert({
+      user_id: user.userId,
+      search_criteria: criteria,
+      results
+    }).catch(() => {})
 
     return res.status(200).json(results)
   } catch (err) {
