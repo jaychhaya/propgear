@@ -1,7 +1,7 @@
 // api/auth/login.js - Vercel serverless function
 import { createClient } from '@supabase/supabase-js'
 import { SignJWT } from 'jose'
-import { scryptSync, timingSafeEqual } from 'crypto'
+import { scryptSync, timingSafeEqual } from 'node:crypto'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
