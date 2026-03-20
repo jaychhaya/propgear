@@ -70,10 +70,10 @@ async function runWithWebSearch(userPrompt) {
   const messages = [{ role: 'user', content: userPrompt }]
 
   // Agentic loop — keep going until Claude stops using tools
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 5; i++) {
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
+      max_tokens: 2000,
       tools,
       system: SYSTEM_PROMPT,
       messages
