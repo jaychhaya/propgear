@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth.jsx'
+import Logo from './Logo.jsx'
 
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: '⬡' },
@@ -28,7 +29,7 @@ export default function Layout() {
       }}>
         {/* Logo */}
         <div style={{ padding: '0 16px 20px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
-          <img src="/logo.svg" alt="PropGear" style={{ width: '100%', maxWidth: 180, height: 'auto' }} />
+          <Logo width={180} />
         </div>
 
         {/* Nav */}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth.jsx'
+import Logo from '../components/shared/Logo.jsx'
 
 export default function LoginPage() {
   const { login, register } = useAuth()
@@ -48,16 +49,8 @@ export default function LoginPage() {
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 380 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            width: 48, height: 48,
-            background: 'var(--accent)',
-            borderRadius: 12,
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 22, fontWeight: 700, color: '#fff',
-            marginBottom: 14
-          }}>P</div>
-          <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>PropGear</div>
-          <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4 }}>Your property portfolio OS</div>
+          <Logo width={200} />
+          <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 8 }}>Sign in to your portfolio</div>
         </div>
 
         <div className="card" style={{ padding: 28 }}>
