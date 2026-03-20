@@ -6,15 +6,15 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const SYSTEM_PROMPT = `You are a property data extraction assistant for Australian real estate.
 
-Given a property address, search realestate.com.au, domain.com.au, and other Australian property sites to find details about that property.
+Search realestate.com.au, domain.com.au, and other Australian property sites to find details about the given address.
 
-Return ONLY a valid JSON object with this exact structure (use null for any fields you cannot find):
+Your final message must contain ONLY this JSON object (use null for missing fields):
 {
   "address": "full street address",
   "suburb": "suburb name",
-  "state": "state abbreviation e.g. NSW",
-  "postcode": "4 digit postcode",
-  "property_type": "residential or unit or townhouse",
+  "state": "NSW",
+  "postcode": "2026",
+  "property_type": "residential",
   "bedrooms": 3,
   "bathrooms": 2,
   "garage": 1,
@@ -26,12 +26,61 @@ Return ONLY a valid JSON object with this exact structure (use null for any fiel
   "valuation_range_low": 880000,
   "valuation_range_high": 960000,
   "weekly_rent_estimate": 650,
-  "photos": [],
   "description": "brief 1-2 sentence property description",
-  "data_sources": ["realestate.com.au", "domain.com.au"]
+  "data_sources": ["realestate.com.au"]
 }
 
-CRITICAL: Return ONLY valid JSON. No markdown, no preamble, no explanation.`
+No markdown, no explanation — just the raw JSON object.`
+
+async function runWithWebSearch(address) {
+  const tools = [{ type: 'web_search_20250305', name: 'web_search' }]
+  const messages = [{ role: 'user', content: `Look up this Australian property and return its details as JSON: ${address}` }]
+
+  for (let i = 0; i < 6; i++) {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      tools,
+      system: SYSTEM_PROMPT,
+      messages
+    })
+
+    messages.push({ role: 'assistant', content: response.content })
+
+    if (response.stop_reason === 'end_turn') {
+      const textBlocks = response.content.filter(b => b.type === 'text')
+      return textBlocks.map(b => b.text).join('\n')
+    }
+
+    if (response.stop_reason === 'tool_use') {
+      const toolUseBlocks = response.content.filter(b => b.type === 'tool_use')
+      const toolResults = toolUseBlocks.map(block => ({
+        type: 'tool_result',
+        tool_use_id: block.id,
+        content: 'Search completed.'
+      }))
+      messages.push({ role: 'user', content: toolResults })
+      continue
+    }
+
+    const textBlocks = response.content.filter(b => b.type === 'text')
+    if (textBlocks.length > 0) return textBlocks.map(b => b.text).join('\n')
+    break
+  }
+
+  throw new Error('Lookup did not complete')
+}
+
+function extractJSON(text) {
+  let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+  try { return JSON.parse(cleaned) } catch {}
+  const start = cleaned.indexOf('{')
+  const end = cleaned.lastIndexOf('}')
+  if (start !== -1 && end !== -1) {
+    try { return JSON.parse(cleaned.slice(start, end + 1)) } catch {}
+  }
+  throw new Error('Could not parse property data')
+}
 
 export default async function handler(req, res) {
   let user
@@ -44,30 +93,8 @@ export default async function handler(req, res) {
   if (!address) return res.status(400).json({ error: 'Address required' })
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      system: SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: `Look up this Australian property and return its details as JSON: ${address}`
-      }]
-    })
-
-    const textBlock = message.content.find(b => b.type === 'text')
-    if (!textBlock) return res.status(500).json({ error: 'No response from AI' })
-
-    let data
-    try {
-      const cleaned = textBlock.text.replace(/```json|```/g, '').trim()
-      data = JSON.parse(cleaned)
-    } catch {
-      const match = textBlock.text.match(/\{[\s\S]+\}/)
-      if (match) data = JSON.parse(match[0])
-      else return res.status(500).json({ error: 'Could not parse property data' })
-    }
-
+    const rawText = await runWithWebSearch(address)
+    const data = extractJSON(rawText)
     return res.status(200).json({ property: data })
   } catch (err) {
     console.error('Lookup error:', err)
