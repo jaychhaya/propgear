@@ -21,7 +21,8 @@ export const api = {
     get: (id) => apiFetch(`/api/properties/${id}`),
     create: (body) => apiFetch('/api/properties', { method: 'POST', body: JSON.stringify(body) }),
     update: (id, body) => apiFetch(`/api/properties/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-    delete: (id) => apiFetch(`/api/properties/${id}`, { method: 'DELETE' })
+    delete: (id) => apiFetch(`/api/properties/${id}`, { method: 'DELETE' }),
+    lookup: (address) => apiFetch('/api/properties/lookup', { method: 'POST', body: JSON.stringify({ address }) })
   },
   research: {
     search: (criteria) => apiFetch('/api/research', { method: 'POST', body: JSON.stringify(criteria) }),
