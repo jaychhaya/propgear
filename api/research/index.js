@@ -94,11 +94,13 @@ export default async function handler(req, res) {
     const results = extractJSON(rawText)
 
     // Save to history (non-critical)
-    await supabase.from('research_results').insert({
-      user_id: user.userId,
-      search_criteria: criteria,
-      results
-    }).catch(() => {})
+    try {
+  await supabase.from('research_results').insert({
+    user_id: user.userId,
+    search_criteria: criteria,
+    results
+  })
+  } catch {}
 
     return res.status(200).json(results)
   } catch (err) {
